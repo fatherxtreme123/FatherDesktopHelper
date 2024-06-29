@@ -6,7 +6,6 @@ const settingsFilePath = path.join(__dirname, 'settings.json');
 
 let apiKey, apiHost, model, temperature, topP, presencePenalty, frequencyPenalty;
 
-// Function to load settings from file
 function loadSettings() {
     try {
         const settings = JSON.parse(fs.readFileSync(settingsFilePath, 'utf8'));
@@ -29,8 +28,6 @@ function loadSettings() {
         console.error('Error loading settings:', error);
     }
 }
-
-// Function to save settings to file
 function saveSettings() {
     const settings = {
         apiKey: document.getElementById('api-key').value,
@@ -69,10 +66,10 @@ document.addEventListener('DOMContentLoaded', () => {
             await ipcRenderer.invoke('HIDE_WINDOW');
             const sources = await ipcRenderer.invoke('DESKTOP_CAPTURER_GET_SOURCES', { types: ['screen'] });
             const entireScreen = sources[0];
-            const thumbnail = entireScreen.thumbnail.toDataURL(); // Get the screenshot as a base64 string
+            const thumbnail = entireScreen.thumbnail.toDataURL(); 
             await ipcRenderer.invoke('SHOW_WINDOW');
 
-            await sendMessage(thumbnail.split(',')[1]); // Send the base64 string without the prefix
+            await sendMessage(thumbnail.split(',')[1]); 
         } catch (error) {
             console.error('Error capturing screen:', error);
             output.innerHTML += `<p><strong>Error:</strong> Failed to capture screen: ${error.message}</p>`;
@@ -108,14 +105,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Authorization': `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
-                    model: model,  // Make sure to use a vision-capable model
+                    model: model,  
                     messages: messages,
                     max_tokens: 300,
                     temperature: temperature,
                     top_p: topP,
                     presence_penalty: presencePenalty,
                     frequency_penalty: frequencyPenalty,
-                    stream: true  // Enable streaming
+                    stream: true  
                 })
             });
 
@@ -141,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 chunks.slice(0, -1).forEach(chunk => {
                     if (chunk) {
                         try {
-                            const data = JSON.parse(chunk.substring(6)); // Remove the "data: " prefix
+                            const data = JSON.parse(chunk.substring(6)); 
                             if (data.choices[0].delta.content) {
                                 assistantOutput.innerHTML += data.choices[0].delta.content;
                             }

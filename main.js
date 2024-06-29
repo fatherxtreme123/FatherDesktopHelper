@@ -12,12 +12,12 @@ function createWindow() {
             contextIsolation: false,
             enableRemoteModule: true
         },
-        icon: path.join(__dirname, 'FatherDesktopHelper.ico') // Add this line
+        icon: path.join(__dirname, 'FatherDesktopHelper.ico'), 
+        autoHideMenuBar: true, 
     });
 
     mainWindow.loadFile('index.html');
 
-    // Enable screen capture permissions
     mainWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
         if (permission === 'media') {
             callback(true);
