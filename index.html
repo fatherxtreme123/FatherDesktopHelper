@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Father Desktop Helper</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <button id="settings-btn">Settings</button>
+        <div id="settings-modal" class="modal">
+            <div class="modal-content">
+                <h2>Settings</h2>
+                <label for="api-key">API Key:</label>
+                <input type="text" id="api-key">
+                <label for="api-host">API Host:</label>
+                <input type="text" id="api-host" value="https://api.openai.com/v1">
+                <label for="model">Model:</label>
+                <input type="text" id="model" value="gpt-3.5-turbo">
+                <label for="temperature">Temperature:</label>
+                <input type="number" id="temperature" value="0.7" min="0" max="1" step="0.1">
+                <label for="top-p">Top P:</label>
+                <input type="number" id="top-p" value="1" min="0" max="1" step="0.1">
+                <label for="presence-penalty">Presence Penalty:</label>
+                <input type="number" id="presence-penalty" value="0" min="-2" max="2" step="0.1">
+                <label for="frequency-penalty">Frequency Penalty:</label>
+                <input type="number" id="frequency-penalty" value="0" min="-2" max="2" step="0.1">
+                <button id="save-settings">Save</button>
+            </div>
+        </div>
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Type your message here...">
+            <button id="send-btn">Enter</button>
+        </div>
+        <div id="output"></div>
+    </div>
+    <script src="scripts.js"></script>
+</body>
+</html>
