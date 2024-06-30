@@ -122,13 +122,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const messages = [{
                 role: 'system',
-                content: 'You are a helpful assistant capable of analyzing images.'
+                content: 'You are a helpful assistant. The shorter your answer, the better. If an explanation is not necessary, don\'t explain.'
             },
             {
                 role: 'user',
                 content: [{
                         type: 'text',
-                        text: userMessage || "What's in this image?"
+                        text: userMessage
                     },
                     {
                         type: 'image_url',
