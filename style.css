@@ -63,7 +63,7 @@ body {
 .modal {
     display: none;
     position: fixed;
-    z-index: 1;
+    
     left: 0;
     top: 0;
     width: 100%;
@@ -98,7 +98,7 @@ body {
     margin-top: 10px;
 }
 
-.modal-content input {
+.modal-content input, .modal-content select, .modal-content button {
     width: 100%;
     padding: 5px;
     margin-top: 5px;
@@ -109,7 +109,7 @@ body {
     box-sizing: border-box; 
 }
 
-#save-settings {
+#save-settings, #cancel-settings, #restore-default-settings {
     margin-top: 20px;
     padding: 10px 20px;
     background-color: #4CAF50;
@@ -117,5 +117,12 @@ body {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    width: 100%; 
+}
+
+#cancel-settings {
+    background-color: #4CAF50;
+}
+
+#restore-default-settings {
+    background-color: #4CAF50;
 }

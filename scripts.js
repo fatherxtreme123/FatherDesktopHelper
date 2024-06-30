@@ -3,43 +3,70 @@ const fs = require('fs');
 const path = require('path');
 
 const settingsFilePath = path.join(__dirname, 'settings.json');
+const defaultSettings = {
+    apiKey: '',
+    apiHost: 'https://api.openai.com/v1',
+    model: 'gpt-4o',
+    temperature: 0.7,
+    topP: 1,
+    presencePenalty: 0,
+    frequencyPenalty: 0,
+    minimizeOnClose: true,
+    alwaysOnTop: true,
+    startOnBoot: false
+};
 
-let apiKey, apiHost, model, temperature, topP, presencePenalty, frequencyPenalty;
+let settings;
 
 function loadSettings() {
     try {
-        const settings = JSON.parse(fs.readFileSync(settingsFilePath, 'utf8'));
-        apiKey = settings.apiKey;
-        apiHost = settings.apiHost;
-        model = settings.model;
-        temperature = settings.temperature;
-        topP = settings.topP;
-        presencePenalty = settings.presencePenalty;
-        frequencyPenalty = settings.frequencyPenalty;
-
-        document.getElementById('api-key').value = apiKey;
-        document.getElementById('api-host').value = apiHost;
-        document.getElementById('model').value = model;
-        document.getElementById('temperature').value = temperature;
-        document.getElementById('top-p').value = topP;
-        document.getElementById('presence-penalty').value = presencePenalty;
-        document.getElementById('frequency-penalty').value = frequencyPenalty;
+        settings = JSON.parse(fs.readFileSync(settingsFilePath, 'utf8'));
     } catch (error) {
         console.error('Error loading settings:', error);
+        settings = { ...defaultSettings };
     }
+    applySettingsToUI(settings);
 }
+
 function saveSettings() {
-    const settings = {
+    const newSettings = {
         apiKey: document.getElementById('api-key').value,
         apiHost: document.getElementById('api-host').value,
         model: document.getElementById('model').value,
         temperature: parseFloat(document.getElementById('temperature').value),
         topP: parseFloat(document.getElementById('top-p').value),
         presencePenalty: parseFloat(document.getElementById('presence-penalty').value),
-        frequencyPenalty: parseFloat(document.getElementById('frequency-penalty').value)
+        frequencyPenalty: parseFloat(document.getElementById('frequency-penalty').value),
+        minimizeOnClose: document.getElementById('minimize-on-close').checked,
+        alwaysOnTop: document.getElementById('always-on-top').checked,
+        startOnBoot: document.getElementById('start-on-boot').checked
     };
+    
+    settings = newSettings;
+    fs.writeFileSync(settingsFilePath, JSON.stringify(newSettings), 'utf8');
+    applySettings();
+}
 
-    fs.writeFileSync(settingsFilePath, JSON.stringify(settings), 'utf8');
+function applySettingsToUI(settings) {
+    document.getElementById('api-key').value = settings.apiKey;
+    document.getElementById('api-host').value = settings.apiHost;
+    document.getElementById('model').value = settings.model;
+    document.getElementById('temperature').value = settings.temperature;
+    document.getElementById('top-p').value = settings.topP;
+    document.getElementById('presence-penalty').value = settings.presencePenalty;
+    document.getElementById('frequency-penalty').value = settings.frequencyPenalty;
+    document.getElementById('minimize-on-close').checked = settings.minimizeOnClose;
+    document.getElementById('always-on-top').checked = settings.alwaysOnTop;
+    document.getElementById('start-on-boot').checked = settings.startOnBoot;
+}
+
+function restoreDefaultSettings() {
+    settings = { ...defaultSettings };
+    applySettingsToUI(settings);
+}
+
+function applySettings() {
+    ipcRenderer.send('apply-settings', settings);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -48,6 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsBtn = document.getElementById('settings-btn');
     const settingsModal = document.getElementById('settings-modal');
     const saveSettingsBtn = document.getElementById('save-settings');
+    const cancelSettingsBtn = document.getElementById('cancel-settings');
+    const restoreDefaultSettingsBtn = document.getElementById('restore-default-settings');
     const sendBtn = document.getElementById('send-btn');
     const userInput = document.getElementById('user-input');
     const output = document.getElementById('output');
@@ -61,15 +90,26 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsModal.style.display = 'none';
     });
 
+    cancelSettingsBtn.addEventListener('click', () => {
+        loadSettings();
+        settingsModal.style.display = 'none';
+    });
+
+    restoreDefaultSettingsBtn.addEventListener('click', () => {
+        restoreDefaultSettings();
+    });
+
     const captureScreenAndSendMessage = async () => {
         try {
             await ipcRenderer.invoke('HIDE_WINDOW');
-            const sources = await ipcRenderer.invoke('DESKTOP_CAPTURER_GET_SOURCES', { types: ['screen'] });
+            const sources = await ipcRenderer.invoke('DESKTOP_CAPTURER_GET_SOURCES', {
+                types: ['screen']
+            });
             const entireScreen = sources[0];
-            const thumbnail = entireScreen.thumbnail.toDataURL(); 
+            const thumbnail = entireScreen.thumbnail.toDataURL();
             await ipcRenderer.invoke('SHOW_WINDOW');
 
-            await sendMessage(thumbnail.split(',')[1]); 
+            await sendMessage(thumbnail.split(',')[1]);
         } catch (error) {
             console.error('Error capturing screen:', error);
             output.innerHTML += `<p><strong>Error:</strong> Failed to capture screen: ${error.message}</p>`;
@@ -80,12 +120,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const userMessage = userInput.value;
         output.innerHTML = '';
 
-        const messages = [
-            { role: 'system', content: 'You are a helpful assistant capable of analyzing images.' },
+        const messages = [{
+                role: 'system',
+                content: 'You are a helpful assistant capable of analyzing images.'
+            },
             {
                 role: 'user',
-                content: [
-                    { type: 'text', text: userMessage || "What's in this image?" },
+                content: [{
+                        type: 'text',
+                        text: userMessage || "What's in this image?"
+                    },
                     {
                         type: 'image_url',
                         image_url: {
@@ -98,21 +142,21 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         try {
-            const response = await fetch(`${apiHost}/chat/completions`, {
+            const response = await fetch(`${settings.apiHost}/chat/completions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
+                    'Authorization': `Bearer ${settings.apiKey}`
                 },
                 body: JSON.stringify({
-                    model: model,  
+                    model: settings.model,
                     messages: messages,
                     max_tokens: 300,
-                    temperature: temperature,
-                    top_p: topP,
-                    presence_penalty: presencePenalty,
-                    frequency_penalty: frequencyPenalty,
-                    stream: true  
+                    temperature: settings.temperature,
+                    top_p: settings.topP,
+                    presence_penalty: settings.presencePenalty,
+                    frequency_penalty: settings.frequencyPenalty,
+                    stream: true
                 })
             });
 
@@ -127,18 +171,23 @@ document.addEventListener('DOMContentLoaded', () => {
             let assistantOutput = document.createElement('p');
             assistantOutput.innerHTML = `<strong>Assistant:</strong> `;
             output.appendChild(assistantOutput);
-            
+
             while (true) {
-                const { done, value } = await reader.read();
+                const {
+                    done,
+                    value
+                } = await reader.read();
                 if (done) break;
 
-                partialContent += decoder.decode(value, { stream: true });
+                partialContent += decoder.decode(value, {
+                    stream: true
+                });
                 const chunks = partialContent.split('\n\n');
 
                 chunks.slice(0, -1).forEach(chunk => {
                     if (chunk) {
                         try {
-                            const data = JSON.parse(chunk.substring(6)); 
+                            const data = JSON.parse(chunk.substring(6));
                             if (data.choices[0].delta.content) {
                                 assistantOutput.innerHTML += data.choices[0].delta.content;
                             }
@@ -161,5 +210,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') {
             captureScreenAndSendMessage();
         }
+    });
+
+    // Add global shortcut listener
+    ipcRenderer.on('trigger-app', () => {
+        mainWindow.show();
     });
 });
