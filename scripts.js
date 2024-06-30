@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendMessage = async (base64Image) => {
         const userMessage = userInput.value;
         output.innerHTML = '';
-
+    
         const messages = [{
                 role: 'system',
                 content: 'You are a helpful assistant. The shorter your answer, the better. If an explanation is not necessary, don\'t explain.'
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ]
             }
         ];
-
+    
         try {
             const response = await fetch(`${settings.apiHost}/chat/completions`, {
                 method: 'POST',
@@ -159,51 +159,46 @@ document.addEventListener('DOMContentLoaded', () => {
                     stream: true
                 })
             });
-
+    
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
             }
-
+    
             const reader = response.body.getReader();
             let decoder = new TextDecoder();
             let partialContent = '';
             let assistantOutput = document.createElement('p');
-            assistantOutput.innerHTML = `<strong>Assistant:</strong> `;
+            assistantOutput.innerHTML = '';
             output.appendChild(assistantOutput);
-
+    
             while (true) {
-                const {
-                    done,
-                    value
-                } = await reader.read();
+                const { done, value } = await reader.read();
                 if (done) break;
-
-                partialContent += decoder.decode(value, {
-                    stream: true
-                });
+    
+                partialContent += decoder.decode(value, { stream: true });
                 const chunks = partialContent.split('\n\n');
-
+    
                 chunks.slice(0, -1).forEach(chunk => {
                     if (chunk) {
                         try {
                             const data = JSON.parse(chunk.substring(6));
                             if (data.choices[0].delta.content) {
-                                assistantOutput.innerHTML += data.choices[0].delta.content;
+                                assistantOutput.innerHTML += data.choices[0].delta.content.replace(/\n/g, '<br>');
                             }
                         } catch (e) {
                             console.error('Error parsing chunk:', e);
                         }
                     }
                 });
-
+    
                 partialContent = chunks[chunks.length - 1];
             }
         } catch (error) {
             console.error('Error:', error);
             output.innerHTML += `<p><strong>Error:</strong> ${error.message}</p>`;
         }
-    };
+    };    
 
     sendBtn.addEventListener('click', captureScreenAndSendMessage);
     userInput.addEventListener('keypress', (e) => {
